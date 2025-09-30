@@ -1,0 +1,8 @@
+
+
+DP[x,y] = max(
+    DP[x-1, y] + -1,
+    DP[x, y-1] + -1,
+    DP[x-1, y-1] + match(DP[0,x], DP[0,y])
+
+)
