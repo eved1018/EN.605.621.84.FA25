@@ -19,8 +19,9 @@ def fastest_tour_wrapper(L, TRAVEL_TIME):
     best_time = inf
     best_steps = 0
     best_start = None
-    # for start_light in L:
-    for start_light in ["A"]:
+    for start_light in L:
+    # for start_light in ["A"]:
+    # for start_light in ["Choptank River"]:
         L_minus = list_minus(L, start_light)
         curr_tour, curr_time, steps, _ = fastest_tour_memo(start_light, L_minus, TRAVEL_TIME)
         # break
@@ -35,46 +36,43 @@ def fastest_tour_wrapper(L, TRAVEL_TIME):
 
 
 def fastest_tour_memo(start_light: str, L: list[str], TRAVEL_TIME: dict[tuple[str, str], float]) -> tuple[list[str], float, int, dict]:
-    def fastest_tour(start_light: str, L: list[str], TRAVEL_TIME: dict[tuple[str, str], float], memo: dict[tuple, tuple[list[str], float]]):
+    def fastest_tour_memo_inner(start_light: str, L: list[str], TRAVEL_TIME: dict[tuple[str, str], float], memo: dict[tuple, tuple[list[str], float]]):
         best_tour = []  # used to store the running best overall tour that starts at start_light
         best_time = inf  # used to store the time for the best_tour sequence
         all_steps = 0
-        T = (start_light, *L)
+        # L = list_minus(L, start_light)  # remove start_light from list
+        T = (start_light, frozenset(L))
         m = memo.get(T)
-        if m is not None:
-            best_tour, best_time = m
-            all_steps += 1
-            print(f"MEMO HIT: {start_light} {L}")
-            best_tour = [start_light] + best_tour
-            return best_tour, best_time, all_steps, memo
 
         if len(L) == 1:
             second_light = L[0]
-            return [start_light, second_light], get_travel_time(start_light, second_light, TRAVEL_TIME), 1, memo
+            best_tour, best_time = [start_light, second_light], get_travel_time(start_light, second_light, TRAVEL_TIME)
+            memo[T] = (best_tour, best_time)
+            return best_tour, best_time, 1, memo
 
+
+        if m is not None:
+            best_tour, best_time = m # best time already includes start light!!!
+            all_steps = 1
+            # print(f"MEMO HIT: {T}")
         else:
             # RECURSIVE CASE
-            print(f"MEMO MISS: {start_light} {L}")
+            # print(f"MEMO MISS: {T}")
             for second_light in L:
                 L_prime = list_minus(L, second_light)  # remove start_light from list
-                curr_tour, curr_time, steps, memo = fastest_tour(second_light, L_prime, TRAVEL_TIME, memo)
+                curr_tour, curr_time, steps, memo = fastest_tour_memo_inner(second_light, L_prime, TRAVEL_TIME, memo)
                 all_steps += steps
                 curr_time += get_travel_time(start_light, second_light, TRAVEL_TIME)
                 if curr_time < best_time:  # update best_tour and best_time with new candidate
                     best_tour = curr_tour
                     best_time = curr_time
-
-            memo[T] = (best_tour, best_time)
             best_tour = [start_light] + best_tour
-            # insert start_light at the front of best tour
-            return best_tour, best_time, all_steps, memo
+            memo[T] = (best_tour, best_time)
+        return best_tour, best_time, all_steps, memo
         
 
     memo = {}
-    best_tour, best_time, all_steps, memo = fastest_tour(start_light, L, TRAVEL_TIME, memo)
-    # pprint(memo)
-
-    return best_tour, best_time, all_steps, memo
+    return fastest_tour_memo_inner(start_light, L, TRAVEL_TIME, memo)
 
 def fastest_tour_bf(start_light: str, L: list[str], TRAVEL_TIME: dict[tuple[str, str], float]) -> tuple[list[str], float, int]:
     """
@@ -117,13 +115,11 @@ def fastest_tour_bf(start_light: str, L: list[str], TRAVEL_TIME: dict[tuple[str,
 
 def run_tests(travel_times, answer_tour, answer_time):
     L = list(set([item for k in travel_times.keys() for item in k]))
+    # L = ['G', 'A', 'H', 'C', 'I', 'E', 'J', 'B', 'F', 'D']
     print("\n----------")
     print(f"Running test on input: {L}")
     print(len(L))
     best_tour, best_time, steps, best_start  = fastest_tour_wrapper(L, travel_times)
-    s = L[0]
-    # fastest_tour_memo(s, L, travel_times)
-    # fastest_tour_bf(s, L, travel_times)
     print(f"Result:\n\t{best_tour=}\n\t{best_time=}\n\t{steps=}\n\t{best_start=}")
     assert best_tour == answer_tour or best_tour[::-1] == answer_tour, f"Expected {answer_tour} got {best_tour}"
     assert best_time == answer_time, f"Expected {answer_time} got {best_time}"
@@ -325,7 +321,14 @@ def test4():
     run_tests(TRAVEL_TIME, answer, time)
 
 
+
 # test1()
-# test2()
-test3()
+for i in range(4):
+    test2()
+    test3()
 # test4()
+
+
+# 17855 HIT:
+#  5116 MISS:
+# 17947 STEPS:
