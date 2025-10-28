@@ -1,6 +1,12 @@
 from math import inf
 from pprint import pprint
 
+MEMO = {}
+
+def reset_memo():
+    global MEMO    
+    MEMO = {}
+
 def list_minus(L, x):
     # Returns a list of L that does not have x in it
     return list(set(L) - set([x,]))
@@ -17,62 +23,64 @@ def get_travel_time(x, y, TRAVEL_TIME):
 def fastest_tour_wrapper(L, TRAVEL_TIME):
     best_tour = []
     best_time = inf
-    best_steps = 0
+    all_steps = 0
     best_start = None
+    reset_memo()
     for start_light in L:
     # for start_light in ["A"]:
     # for start_light in ["Choptank River"]:
         L_minus = list_minus(L, start_light)
-        curr_tour, curr_time, steps, _ = fastest_tour_memo(start_light, L_minus, TRAVEL_TIME)
+        curr_tour, curr_time, steps = fastest_tour_memo(start_light, L_minus, TRAVEL_TIME)
+        all_steps += steps
         # break
         # curr_tour, curr_time, steps = fastest_tour_bf(start_light, L_minus, TRAVEL_TIME)
         if curr_time < best_time:
             best_tour = curr_tour
             best_time = curr_time
-            best_steps = steps
             best_start = start_light
-
-    return best_tour, best_time, best_steps, best_start
-
-
-def fastest_tour_memo(start_light: str, L: list[str], TRAVEL_TIME: dict[tuple[str, str], float]) -> tuple[list[str], float, int, dict]:
-    def fastest_tour_memo_inner(start_light: str, L: list[str], TRAVEL_TIME: dict[tuple[str, str], float], memo: dict[tuple, tuple[list[str], float]]):
-        best_tour = []  # used to store the running best overall tour that starts at start_light
-        best_time = inf  # used to store the time for the best_tour sequence
-        all_steps = 0
-        # L = list_minus(L, start_light)  # remove start_light from list
-        T = (start_light, frozenset(L))
-        m = memo.get(T)
-
-        if len(L) == 1:
-            second_light = L[0]
-            best_tour, best_time = [start_light, second_light], get_travel_time(start_light, second_light, TRAVEL_TIME)
-            memo[T] = (best_tour, best_time)
-            return best_tour, best_time, 1, memo
+    return best_tour, best_time, all_steps, best_start
 
 
-        if m is not None:
-            best_tour, best_time = m # best time already includes start light!!!
-            all_steps = 1
-            # print(f"MEMO HIT: {T}")
-        else:
-            # RECURSIVE CASE
-            # print(f"MEMO MISS: {T}")
-            for second_light in L:
-                L_prime = list_minus(L, second_light)  # remove start_light from list
-                curr_tour, curr_time, steps, memo = fastest_tour_memo_inner(second_light, L_prime, TRAVEL_TIME, memo)
-                all_steps += steps
-                curr_time += get_travel_time(start_light, second_light, TRAVEL_TIME)
-                if curr_time < best_time:  # update best_tour and best_time with new candidate
-                    best_tour = curr_tour
-                    best_time = curr_time
-            best_tour = [start_light] + best_tour
-            memo[T] = (best_tour, best_time)
-        return best_tour, best_time, all_steps, memo
+# def fastest_tour_memo(start_light: str, L: list[str], TRAVEL_TIME: dict[tuple[str, str], float]) -> tuple[list[str], float, int, dict]:
+def fastest_tour_memo(start_light: str, L: list[str], TRAVEL_TIME: dict[tuple[str, str], float]):
+    best_tour = []  # used to store the running best overall tour that starts at start_light
+    best_time = inf  # used to store the time for the best_tour sequence
+    all_steps = 0
+    L = list_minus(L, start_light)  # remove start_light from list
+    T = (start_light, frozenset(L))
+    m = MEMO.get(T)
+
+    if len(L) == 1:
+        print("MEMO BASECASE")
+        second_light = L[0]
+        best_tour, best_time = [start_light, second_light], get_travel_time(start_light, second_light, TRAVEL_TIME)
+        MEMO[T] = (best_tour, best_time)
+        return best_tour, best_time, 1
+
+
+    if m is not None:
+        best_tour, best_time = m # best time already includes start light!!!
+        all_steps += 1
+        print(f"MEMO HIT: {T}")
+        return best_tour, best_time, all_steps
+
+    # RECURSIVE CASE
+    print(f"MEMO MISS: {T}")
+    for second_light in L:
+        # L_prime = list_minus(L, second_light)  # remove start_light from list
+        curr_tour, curr_time, steps = fastest_tour_memo(second_light, L, TRAVEL_TIME)
+        all_steps += steps
+        curr_time += get_travel_time(start_light, second_light, TRAVEL_TIME)
+        if curr_time < best_time:  # update best_tour and best_time with new candidate
+            best_tour = curr_tour
+            best_time = curr_time
+    best_tour = [start_light] + best_tour
+    MEMO[T] = (best_tour, best_time)
+    return best_tour, best_time, all_steps
         
 
-#     memo = {}
-#     return fastest_tour_memo_inner(start_light, L, TRAVEL_TIME, memo)
+    # memo = {}
+    # return fastest_tour_memo_inner(start_light, L, TRAVEL_TIME, memo)
 
 def fastest_tour_bf(start_light: str, L: list[str], TRAVEL_TIME: dict[tuple[str, str], float]) -> tuple[list[str], float, int]:
     """
@@ -323,9 +331,12 @@ def test4():
 
 
 # test1()
-for i in range(4):
-    test2()
-    test3()
+# test2()
+test3()
+# test4()
+# for i in range(4):
+#     test2()
+#     test3()
 # test3()
 # test4()
 
